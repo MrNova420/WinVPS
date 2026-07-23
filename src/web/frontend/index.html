@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WinVPS Dashboard</title>
+<style>
+  :root { --bg: #0d1117; --surface: #161b22; --border: #30363d; --text: #c9d1d9; --text-dim: #8b949e; --green: #3fb950; --red: #f85149; --yellow: #d29922; --blue: #58a6ff; --accent: #2ea043; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+  .header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  .header h1 { font-size: 24px; }
+  .header .subtitle { color: var(--text-dim); font-size: 14px; }
+  .header .status-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+  .status-badge.online { background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+  .status-badge.offline { background: rgba(248,81,73,0.15); color: var(--red); border: 1px solid rgba(248,81,73,0.3); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; transition: border-color 0.2s; }
+  .card:hover { border-color: var(--blue); }
+  .card h3 { font-size: 13px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .card .value { font-size: 24px; font-weight: 600; }
+  .card .value.green { color: var(--green); }
+  .card .value.red { color: var(--red); }
+  .card .value.yellow { color: var(--yellow); }
+  .card .sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+  .services { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 24px; }
+  .services h2 { padding: 16px 20px; border-bottom: 1px solid var(--border); font-size: 16px; }
+  .service-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--border); }
+  .service-row:last-child { border-bottom: none; }
+  .service-row .name { font-weight: 500; }
+  .service-row .pid { color: var(--text-dim); font-size: 12px; }
+  .service-row .status { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .status.running { background: rgba(63,185,80,0.15); color: var(--green); }
+  .status.stopped { background: rgba(248,81,73,0.15); color: var(--red); }
+  .service-row .actions button { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 4px; }
+  .service-row .actions button:hover { border-color: var(--blue); color: var(--blue); }
+  .tunnels { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .tunnel-badge { padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .tunnel-badge.active { background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+  .tunnel-badge.inactive { background: rgba(139,148,158,0.15); color: var(--text-dim); border: 1px solid var(--border); }
+  .nav { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .nav a { color: var(--text-dim); text-decoration: none; padding: 8px 16px; border-radius: 6px; font-size: 14px; cursor: pointer; }
+  .nav a:hover, .nav a.active { color: var(--text); background: var(--surface); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .logs-box { background: #010409; border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-family: 'SF Mono','Fira Code','Cascadia Code',monospace; font-size: 12px; line-height: 1.7; max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+  .logs-box .line { color: var(--text-dim); }
+  .config-form label { display: block; margin-bottom: 12px; }
+  .config-form label span { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
+  .config-form input { width: 100%; padding: 8px 12px; background: #010409; border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 14px; }
+  .config-form input:focus { outline: none; border-color: var(--blue); }
+  button.primary { background: var(--accent); color: #fff; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; }
+  button.primary:hover { background: #2c974b; }
+  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--surface); border: 1px solid var(--green); padding: 12px 20px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; }
+  .toast.show { opacity: 1; }
+  .platform-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; background: rgba(88,166,255,0.15); color: var(--blue); border: 1px solid rgba(88,166,255,0.3); margin-left: 8px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>WinVPS <span style="color:var(--text-dim);font-weight:400;font-size:16px">Dashboard</span></h1>
+      <div class="subtitle" id="hostname">Loading...<span class="platform-badge">Windows</span></div>
+    </div>
+    <div>
+      <span class="status-badge online" id="statusBadge">Online</span>
+      <span style="color:var(--text-dim);font-size:12px;margin-left:8px" id="uptime"></span>
+    </div>
+  </div>
+
+  <div class="nav">
+    <a class="active" onclick="switchTab('overview')">Overview</a>
+    <a onclick="switchTab('services')">Services</a>
+    <a onclick="switchTab('logs')">Logs</a>
+    <a onclick="switchTab('config')">Configuration</a>
+    <a onclick="switchTab('storage')">Storage</a>
+  </div>
+
+  <div id="tab-overview" class="tab-content active">
+    <div class="grid">
+      <div class="card"><h3>CPU Load</h3><div class="value green" id="cpu">-</div></div>
+      <div class="card"><h3>Memory</h3><div class="value yellow" id="memory">-</div></div>
+      <div class="card"><h3>Disk</h3><div class="value" id="disk">-</div></div>
+      <div class="card"><h3>Services</h3><div class="value blue" id="svcCount">0</div><div class="sub">running</div></div>
+    </div>
+    <div class="card">
+      <h3>Tunnels</h3>
+      <div class="tunnels" id="tunnelList"></div>
+    </div>
+  </div>
+
+  <div id="tab-services" class="tab-content">
+    <div class="services" id="serviceList"></div>
+  </div>
+
+  <div id="tab-logs" class="tab-content">
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+      <select id="logSelector" style="background:#010409;border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;"></select>
+      <button class="primary" onclick="refreshLogs()">Refresh</button>
+    </div>
+    <div class="logs-box" id="logOutput">Select a service to view logs</div>
+  </div>
+
+  <div id="tab-config" class="tab-content">
+    <div class="card">
+      <form class="config-form" id="configForm"></form>
+      <button class="primary" onclick="saveConfig()" style="margin-top:16px">Save Configuration</button>
+    </div>
+  </div>
+
+  <div id="tab-storage" class="tab-content">
+    <div class="grid">
+      <div class="card"><h3>WinVPS Usage</h3><div class="value" id="storageUsage">-</div></div>
+      <div class="card"><h3>Available Backups</h3><div class="value" id="backupCount">0</div></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="primary" onclick="createBackup()">Create Backup</button>
+      <button class="primary" onclick="loadStorage()" style="background:var(--border);">Refresh</button>
+    </div>
+    <div class="services" style="margin-top:16px" id="backupList"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const BASE = '';
+let refreshInterval;
+
+function toast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = isError ? 'var(--red)' : 'var(--green)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelector('.nav a[onclick*="' + name + '"]').classList.add('active');
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function api(url, opts) {
+  const r = await fetch(BASE + url, { headers: {'Accept': 'application/json'}, ...opts });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function loadOverview() {
+  try {
+    const d = await api('/api/status');
+    document.getElementById('hostname').innerHTML = (d.hostname || 'Unknown') + '<span class="platform-badge">' + (d.platform || 'WinVPS') + '</span>';
+    document.getElementById('uptime').textContent = d.uptime || '';
+    document.getElementById('statusBadge').textContent = 'Online';
+    document.getElementById('cpu').textContent = d.cpu || '-';
+    document.getElementById('memory').textContent = d.memory || '-';
+    document.getElementById('disk').textContent = d.disk || '-';
+    const running = d.services.filter(s => s.status === 'running').length;
+    document.getElementById('svcCount').textContent = running;
+    const tl = document.getElementById('tunnelList');
+    tl.innerHTML = '';
+    for (const [k,v] of Object.entries(d.tunnels || {})) {
+      const b = document.createElement('span');
+      b.className = 'tunnel-badge ' + (v === 'active' ? 'active' : 'inactive');
+      b.textContent = k + ': ' + v;
+      tl.appendChild(b);
+    }
+  } catch(e) {
+    document.getElementById('statusBadge').textContent = 'Offline';
+    document.getElementById('statusBadge').className = 'status-badge offline';
+  }
+}
+
+async function loadServices() {
+  try {
+    const d = await api('/api/services');
+    const el = document.getElementById('serviceList');
+    if (!d.services || d.services.length === 0) {
+      el.innerHTML = '<h2>Services</h2><div class="service-row"><span style="color:var(--text-dim)">No services running</span></div>';
+      return;
+    }
+    let html = '<h2>Services</h2>';
+    for (const s of d.services) {
+      html += '<div class="service-row">' +
+        '<div><span class="name">' + escapeHtml(s.name) + '</span> <span class="pid">PID ' + s.pid + '</span></div>' +
+        '<div style="display:flex;align-items:center;gap:8px">' +
+          '<span class="status ' + s.status + '">' + s.status + '</span>' +
+          '<div class="actions">' +
+            '<button onclick="serviceAction(\'' + s.name + '\',\'start\')">Start</button>' +
+            '<button onclick="serviceAction(\'' + s.name + '\',\'stop\')">Stop</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }
+    el.innerHTML = html;
+  } catch(e) { console.error(e); }
+}
+
+async function serviceAction(name, action) {
+  try {
+    const r = await api('/api/services/' + name + '/' + action, { method: 'POST' });
+    toast(r.message || action + ' ' + name);
+    setTimeout(loadServices, 1000);
+  } catch(e) { toast(e.message, true); }
+}
+
+async function loadLogSelector() {
+  try {
+    const d = await api('/api/services');
+    const sel = document.getElementById('logSelector');
+    sel.innerHTML = '<option value="">Select service...</option>';
+    const services = ['ssh','web','fail2ban','healthcheck','tamper','obfuscate','update'];
+    for (const s of services) {
+      sel.innerHTML += '<option value="' + s + '">' + s + '</option>';
+    }
+  } catch(e) {}
+}
+
+async function refreshLogs() {
+  const sel = document.getElementById('logSelector');
+  const out = document.getElementById('logOutput');
+  if (!sel.value) { out.innerHTML = 'Select a service to view logs'; return; }
+  try {
+    const d = await api('/api/logs/' + sel.value + '?lines=100');
+    out.innerHTML = (d.lines || []).map(l => '<div class="line">' + escapeHtml(l) + '</div>').join('');
+    out.scrollTop = out.scrollHeight;
+  } catch(e) {
+    out.innerHTML = '<div class="line" style="color:var(--red)">Error: ' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+async function loadConfig() {
+  try {
+    const d = await api('/api/config');
+    const form = document.getElementById('configForm');
+    form.innerHTML = '';
+    const important = ['WINVPS_SSH_PORT','WINVPS_WEB_PORT','WINVPS_TIER','WINVPS_AUTO_UPDATE','WINVPS_TUNNEL_TYPE','WINVPS_WATCHDOG'];
+    const entries = Object.entries(d).sort((a,b) => {
+      const ai = important.indexOf(a[0]); const bi = important.indexOf(b[0]);
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    });
+    for (const [k,v] of entries) {
+      const label = document.createElement('label');
+      label.innerHTML = '<span>' + escapeHtml(k) + '</span><input type="text" name="' + escapeHtml(k) + '" value="' + escapeHtml(v) + '">';
+      form.appendChild(label);
+    }
+  } catch(e) { console.error(e); }
+}
+
+async function saveConfig() {
+  const form = document.getElementById('configForm');
+  const data = {};
+  form.querySelectorAll('input').forEach(i => data[i.name] = i.value);
+  try {
+    await api('/api/config', { method: 'POST', body: JSON.stringify(data), headers: {'Content-Type':'application/json'} });
+    toast('Configuration saved');
+  } catch(e) { toast(e.message, true); }
+}
+
+async function loadStorage() {
+  try {
+    const d = await api('/api/storage');
+    document.getElementById('storageUsage').textContent = d.anvps_usage_mb ? parseFloat(d.anvps_usage_mb).toFixed(1) + ' MB' : '-';
+  } catch(e) {}
+  try {
+    const d = await api('/api/backups');
+    document.getElementById('backupCount').textContent = d.backups.length;
+    const el = document.getElementById('backupList');
+    if (d.backups.length === 0) {
+      el.innerHTML = '<h2>Backups</h2><div class="service-row"><span style="color:var(--text-dim)">No backups yet</span></div>';
+      return;
+    }
+    let html = '<h2>Backups</h2>';
+    for (const b of d.backups) {
+      const size = (b.size / 1024 / 1024).toFixed(2);
+      html += '<div class="service-row"><span class="name">' + escapeHtml(b.name) + '</span><span style="color:var(--text-dim)">' + size + ' MB</span><span style="color:var(--text-dim);font-size:12px">' + new Date(b.modified).toLocaleString() + '</span></div>';
+    }
+    el.innerHTML = html;
+  } catch(e) {}
+}
+
+async function createBackup() {
+  try {
+    const r = await api('/api/backup', { method: 'POST' });
+    toast('Backup created');
+    setTimeout(loadStorage, 2000);
+  } catch(e) { toast(e.message, true); }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadOverview(); loadServices(); loadLogSelector(); loadConfig(); loadStorage();
+  refreshInterval = setInterval(() => { loadOverview(); loadServices(); }, 5000);
+});
+</script>
+</body>
+</html>

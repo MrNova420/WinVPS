@@ -1,0 +1,69 @@
+# WinVPS File List — All project files
+
+# ===== Core Source =====
+src/cli/winvps.ps1                          # Main CLI entry point (25+ commands)
+src/core/supervisor.ps1                     # Service manager + watchdog auto-restart
+src/core/healthcheck.ps1                    # CPU/RAM/disk/services/network/temp
+src/core/ssh.ps1                            # OpenSSH server management
+src/core/httpd.ps1                          # Web server (Python backend / PS fallback)
+src/core/security.ps1                       # SSH hardening, firewall, ACL tightening
+src/core/fail2ban.ps1                       # Brute-force IP banning via firewall
+src/core/stealth.ps1                        # Port knocking, decoy services, scheduling
+src/core/obfuscate.ps1                      # Hostname/MAC/SSH key/HTTP randomization
+src/core/tamper.ps1                         # Integrity checks, dead man switch, auto-wipe
+src/core/wipe.ps1                           # Secure data overwrite + destruction
+src/core/vpn-killswitch.ps1                 # Windows Firewall VPN kill switch
+src/core/encrypt.ps1                        # BitLocker/VeraCrypt integration
+src/core/tor.ps1                            # Tor Expert Bundle gateway
+src/core/storage.ps1                        # Disk usage, cleanup, analysis
+src/core/autoupdate.ps1                     # Self-update, package updates, log rotation
+src/core/lightweight.ps1                    # RAM tier detection (shadow/lite/standard/full)
+
+# ===== Web =====
+src/web/backend/main.py                     # Python stdlib API server
+src/web/frontend/index.html                 # Dark-themed dashboard (HTML/CSS/JS)
+
+# ===== Bots =====
+src/bots/shell-telegram.ps1                 # Telegram remote management bot
+src/bots/shell-discord.ps1                  # Discord remote management bot
+
+# ===== Tunnels =====
+src/tunnels/tunnel-manager.ps1              # Cloudflare/ngrok/bore/WireGuard tunnels
+
+# ===== Configuration =====
+config/winvps.conf                          # Main configuration
+config/winvps-tunnels.json                  # Tunnel provider config
+config/profiles/minimal.conf                # Minimal profile
+config/profiles/shadow.conf                 # Shadow (512MB) profile
+config/profiles/lite.conf                   # Lite (2GB) profile
+config/profiles/dev.conf                    # Development profile
+config/profiles/standard.conf               # Standard profile
+config/profiles/full.conf                   # Full profile
+config/profiles/hardened.conf               # Security-focused profile
+config/profiles/stealth.conf                # Stealth mode profile
+config/profiles/ghost.conf                  # Ghost (ultra-stealth) profile
+config/profiles/webhost.conf                # Web hosting profile
+
+# ===== Setup & Distribution =====
+setup/Install-WinVPS.ps1                    # Main installer
+setup/Uninstall-WinVPS.ps1                  # Clean removal
+setup/modules/service-installer.ps1         # Per-service installer
+setup/modules/register-services.ps1         # Register 15 service definitions
+dist/winvps-portable.ps1                    # One-command portable installer
+
+# ===== Task Scheduler =====
+tasks/winvps-boot.xml                       # Auto-start on login
+
+# ===== Tests =====
+tests/run-tests.ps1                         # Full test suite
+tests/test-modules.ps1                      # Module parse/load tests
+
+# ===== Documentation =====
+README.md                                   # Project readme
+LICENSE                                     # MIT license
+CHANGELOG.md                                # Version history
+SECURITY.md                                 # Security policy
+
+# ===== Project =====
+.gitignore                                  # Git ignore rules
+FILELIST.txt                                # This file

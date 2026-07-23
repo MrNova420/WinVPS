@@ -1,0 +1,46 @@
+{
+  "tunnels": {
+    "cloudflare": {
+      "description": "Cloudflare Tunnel — permanent, free, no port forwarding",
+      "prereqs": ["cloudflared.exe"],
+      "ports": [7022, 7080, 7443],
+      "docs": "https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/"
+    },
+    "ngrok": {
+      "description": "ngrok — quick tunnels with custom domains on paid plans",
+      "prereqs": ["ngrok.exe"],
+      "ports": [7080],
+      "docs": "https://ngrok.com/docs"
+    },
+    "bore": {
+      "description": "bore — simple, open-source TCP tunnel",
+      "prereqs": ["bore.exe"],
+      "ports": [7022],
+      "docs": "https://github.com/ekzhang/bore"
+    },
+    "wireguard": {
+      "description": "WireGuard — persistent VPN tunnel for full remote access",
+      "prereqs": ["WireGuard.exe"],
+      "ports": [51820],
+      "docs": "https://www.wireguard.com/quickstart/"
+    },
+    "tailscale": {
+      "description": "Tailscale — mesh VPN, zero config, free for personal use",
+      "prereqs": ["tailscale.exe"],
+      "ports": [],
+      "docs": "https://tailscale.com/kb/1017/install"
+    },
+    "ssh": {
+      "description": "SSH reverse tunnel — requires a public VPS",
+      "prereqs": ["ssh.exe"],
+      "ports": [7022],
+      "docs": "https://sshanover.dev/posts/port-forwarding/"
+    }
+  },
+  "local_endpoints": {
+    "ssh": { "port": 7022, "protocol": "tcp" },
+    "web": { "port": 7080, "protocol": "http" },
+    "https": { "port": 7443, "protocol": "https" },
+    "file": { "port": 7444, "protocol": "http" }
+  }
+}

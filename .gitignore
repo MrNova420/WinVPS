@@ -1,0 +1,48 @@
+# WinVPS — .gitignore
+# Windows + Python + PowerShell
+
+# WinVPS data
+services/*/logs/
+services/*.log
+logs/
+data/
+backup/
+tmp/
+ssl/
+tunnels/
+sites/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# PowerShell
+*.ps1xml
+*.pssc
+*.psrc
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+Thumbs.db
+Desktop.ini
+
+# OS
+.DS_Store
+ehthumbs.db
+
+# WinVPS runtime
+*.pid
+*.lock
+winvps-update.ps1.bak
+*.bak
