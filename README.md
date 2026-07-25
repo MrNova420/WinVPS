@@ -142,7 +142,7 @@ You> harden the server
 | Tool | Description |
 |------|-------------|
 | **Fail2ban** | Brute-force protection with auto-banning |
-| **Firewall** | Automated Windows Firewall rules |
+| **Firewall** | Windows Firewall rules — **always asks before creating** |
 | **Stealth Mode** | Schedule when your machine is available |
 | **Obfuscation** | Randomize hostname, MAC, SSH keys, HTTP headers |
 | **Tamper Detection** | File integrity monitoring with auto-wipe |
@@ -151,7 +151,7 @@ You> harden the server
 
 ### Web Dashboard
 
-Beautiful, real-time dashboard at `http://localhost:7080`:
+Beautiful, real-time dashboard at `http://localhost:7080` (binds localhost only — never exposed to network by default):
 
 - **Overview** — CPU, memory, disk with progress bars
 - **Services** — Start/stop/restart, add new services, health status
@@ -277,6 +277,7 @@ C:\WinVPS\
 ```ini
 WINVPS_SSH_PORT=7022
 WINVPS_WEB_PORT=7080
+WINVPS_WEB_HOST="127.0.0.1"        # Dashboard bind address (never 0.0.0.0)
 WINVPS_TIER="auto"
 WINVPS_AUTO_UPDATE=true
 WINVPS_WATCHDOG=true
@@ -288,8 +289,9 @@ WINVPS_TAILSCALE_HOSTNAME=""
 
 ```
 # name|script|type|port|auto_start|health_check|depends_on|description
-ssh|src/core/ssh.ps1|ps|7022|true|||OpenSSH server
-web|src/core/httpd.ps1|ps|7080|true|||Web dashboard
+# WARNING: auto_start is false by default — nothing starts or exposes ports without your consent
+ssh|src/core/ssh.ps1|ps|7022|false|||OpenSSH server
+web|src/core/httpd.ps1|ps|7080|false|||Web dashboard
 ```
 
 ### Per-Service Config (`services/<name>/service.conf`)
@@ -390,6 +392,27 @@ winvps config load full        # Everything on
 winvps config load hardened    # Security focused
 winvps config load stealth     # Maximum stealth
 winvps config load ghost       # Ultra-stealth, auto-wipe
+```
+
+---
+
+## Security Model
+
+WinVPS follows a **never-auto-expose, never-auto-elevate** philosophy:
+
+| Behavior | Default | Why |
+|----------|---------|-----|
+| **Dashboard binding** | `127.0.0.1` (localhost only) | Never exposed to network without explicit opt-in |
+| **Core services** | `auto_start=false` | Nothing runs or opens ports until you say so |
+| **Firewall rules** | Interactive `y/N` prompt | You choose what gets opened |
+| **Scheduled task** | Interactive `y/N` prompt | No boot persistence without consent |
+| **Security harden** | Interactive `y/N` for firewall | You decide the lockdown level |
+
+To expose the dashboard beyond localhost, set `WINVPS_WEB_HOST` in `config/winvps.conf`:
+
+```powershell
+winvps config set WINVPS_WEB_HOST "0.0.0.0"   # ⚠️ Exposes to all interfaces
+winvps config set WINVPS_WEB_HOST "192.168.1.x"  # Expose to LAN only
 ```
 
 ---
