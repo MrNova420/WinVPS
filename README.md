@@ -7,6 +7,7 @@ A Windows fork of [AnVPS](https://github.com/MrNova420/AnVPS) -- turn any Window
 - **Service Supervisor** -- auto-restarts crashed services
 - **System Health Monitoring** -- CPU, RAM, disk, network, temperature
 - **Web Dashboard** -- dark-themed control panel at `http://localhost:7080`
+- **Natural Language Shell** -- type what you want in plain English
 - **Security Hardening** -- SSH lockdown, firewall, fail2ban
 - **Auto-Updates** -- self-updating, package management
 - **Backup System** -- timestamped compressed backups
@@ -25,16 +26,16 @@ A Windows fork of [AnVPS](https://github.com/MrNova420/AnVPS) -- turn any Window
 
 ### 1. Install (Run PowerShell as Administrator)
 
+**One-liner:**
 ```powershell
-# Clone and install
+irm https://raw.githubusercontent.com/MrNova420/WinVPS/master/dist/winvps-portable.ps1 | iex
+```
+
+**Or clone + install:**
+```powershell
 git clone https://github.com/MrNova420/WinVPS.git C:\WinVPS
 cd C:\WinVPS
 .\setup\Install-WinVPS.ps1
-```
-
-Or one-liner:
-```powershell
-irm https://raw.githubusercontent.com/MrNova420/WinVPS/master/dist/winvps-portable.ps1 | iex
 ```
 
 ### 2. What it installs
@@ -53,7 +54,72 @@ winvps status
 
 # Run diagnostics
 winvps doctor
+
+# Open the natural language shell
+winvps shell
 ```
+
+### 4. Web dashboard
+
+Open **http://localhost:7080** in your browser.
+
+API key is auto-generated at `C:\WinVPS\config\web-api.key`.
+
+---
+
+## Natural Language Shell
+
+The fastest way to use WinVPS. Type what you want in plain English.
+
+```powershell
+# Interactive mode - talk to WinVPS
+winvps shell
+
+# One-shot mode - ask and execute
+winvps shell "how's my server doing"
+winvps shell "start the web server"
+winvps shell "show me recent ssh logs"
+winvps shell "create a backup"
+winvps shell "open a tunnel"
+winvps shell "harden the server"
+```
+
+### How it works
+
+```
+  you> how's my server doing
+
+  +-- Suggested Command --------------------------+
+  |  winvps status                                |
+  |  Show system status (CPU, RAM, disk, uptime)  |
+  +-----------------------------------------------+
+
+  Execute? [Y]es  [E]dit  [N]o  [S]kip
+  > y
+```
+
+Type `?` for examples, `exit` to quit.
+
+### What you can say
+
+| Say this | WinVPS runs |
+|----------|-------------|
+| `how's my server doing` | `winvps status` |
+| `start the web server` | `winvps service start web` |
+| `stop ssh` | `winvps service stop ssh` |
+| `restart the database` | `winvps service restart postgres` |
+| `show me recent errors` | `winvps logs` |
+| `show ssh logs` | `winvps logs ssh 50` |
+| `run diagnostics` | `winvps doctor` |
+| `create a backup` | `winvps backup create` |
+| `open a tunnel` | `winvps tunnel start` |
+| `harden the server` | `winvps security harden` |
+| `start fail2ban` | `winvps fail2ban start` |
+| `enable stealth mode` | `winvps stealth enable` |
+| `show all config` | `winvps config show` |
+| `what version is this` | `winvps version` |
+
+Works on Windows (PowerShell 5.1+/7+) and Linux (Bash).
 
 ---
 
@@ -64,7 +130,6 @@ winvps doctor
 | Command | Description |
 |---------|-------------|
 | `winvps shell` | Natural language shell (ask in plain English) |
-| `winvps shell "start the web server"` | One-shot: translate and execute |
 | `winvps status` | System overview (uptime, CPU, RAM, services, network) |
 | `winvps service list` | List all available and running services |
 | `winvps service start ssh` | Start a service |
@@ -321,12 +386,15 @@ WINVPS_LOG_LEVEL="info"
 
 ## Web Dashboard
 
-Visit `http://localhost:7080` after installation. Features:
+Visit **http://localhost:7080** after installation.
+
+### Features
 - System overview (CPU, RAM, disk, uptime)
 - Service management (start/stop/restart)
 - Live logs viewer
 - Configuration editor
 - Storage analyzer
+- Backup management
 - API key authentication (auto-generated on first run)
 
 ### API Key Auth
@@ -345,45 +413,48 @@ Invoke-RestMethod -Uri http://localhost:7080/api/status -Headers @{Authorization
 Invoke-RestMethod -Uri http://localhost:7080/api/apikey -Method POST -Headers @{Authorization="Bearer $key"}
 ```
 
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/status` | GET | System status overview |
+| `/api/services` | GET | List all services |
+| `/api/services/:name/start` | POST | Start a service |
+| `/api/services/:name/stop` | POST | Stop a service |
+| `/api/logs/:service` | GET | Get service logs |
+| `/api/config` | GET/POST | Read/write configuration |
+| `/api/health` | GET | Run health check |
+| `/api/storage` | GET | Storage usage |
+| `/api/backups` | GET | List backups |
+| `/api/backup` | POST | Create backup |
+| `/api/apikey` | GET/POST | Get/rotate API key |
+
 ---
 
-## Natural Language Shell
+## Project Structure
 
-Type what you want in plain English. WinVPS translates it to the correct command, shows it in a box, and asks you to approve/edit/execute.
-
-```powershell
-# Interactive mode
-winvps shell
-
-# One-shot mode
-winvps shell "how's my server doing"
-winvps shell "start the web server"
-winvps shell "show me recent ssh logs"
-winvps shell "create a backup"
-winvps shell "open a tunnel"
-winvps shell "harden the server"
 ```
-
-### What you can say
-
-| Say this | WinVPS runs |
-|----------|-------------|
-| `how's my server doing` | `winvps status` |
-| `start the web server` | `winvps service start web` |
-| `stop ssh` | `winvps service stop ssh` |
-| `restart the database` | `winvps service restart postgres` |
-| `show me recent errors` | `winvps logs` |
-| `show ssh logs` | `winvps logs ssh 50` |
-| `run diagnostics` | `winvps doctor` |
-| `create a backup` | `winvps backup create` |
-| `open a tunnel` | `winvps tunnel start` |
-| `harden the server` | `winvps security harden` |
-| `start fail2ban` | `winvps fail2ban start` |
-| `enable stealth mode` | `winvps stealth enable` |
-| `show all config` | `winvps config show` |
-| `what version is this` | `winvps version` |
-
-Works on Windows (PowerShell 5.1+/7+) and Linux (Bash).
+C:\WinVPS\
+  src/
+    cli/winvps.ps1           # Main CLI (25+ commands)
+    shell/shell.ps1          # Natural language shell (PS)
+    shell/shell.sh           # Natural language shell (Bash)
+    core/                    # 17 core modules
+    web/backend/main.py      # Python API server
+    web/frontend/index.html  # Dashboard UI
+    bots/                    # Telegram/Discord bots
+    tunnels/                 # Tunnel manager
+  config/
+    winvps.conf              # Main config
+    web-api.key              # Auto-generated API key
+    profiles/                # Pre-configured profiles
+  setup/
+    Install-WinVPS.ps1       # Installer
+    Uninstall-WinVPS.ps1     # Uninstaller
+  dist/
+    winvps-portable.ps1      # One-command portable installer
+  tests/                     # Test suite
+```
 
 ---
 
@@ -396,28 +467,6 @@ Works on Windows (PowerShell 5.1+/7+) and Linux (Bash).
 Or from the CLI:
 ```powershell
 winvps uninstall
-```
-
----
-
-## Project Structure
-
-```
-C:\WinVPS\
-  src/
-    cli/winvps.ps1           # Main CLI
-    core/                    # 17 core modules
-    web/backend/main.py      # Python API
-    web/frontend/index.html  # Dashboard
-    bots/                    # Telegram/Discord bots
-    tunnels/                 # Tunnel manager
-  config/
-    winvps.conf              # Main config
-    profiles/                # Pre-configured profiles
-  setup/
-    Install-WinVPS.ps1       # Installer
-    Uninstall-WinVPS.ps1     # Uninstaller
-  tests/                     # Test suite
 ```
 
 ---

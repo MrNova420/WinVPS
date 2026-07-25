@@ -52,6 +52,7 @@ def get_api_key():
     return key
 
 API_KEY = get_api_key()
+_auth_state = {'api_key': API_KEY}
 
 # ---------- Input sanitization ----------
 RE_SERVICE_NAME = re.compile(r'^[a-zA-Z0-9_-]{1,64}$')
@@ -217,9 +218,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def _check_auth(self):
         auth = self.headers.get('Authorization', '')
-        if auth == f'Bearer {API_KEY}':
+        if auth == f'Bearer {_auth_state["api_key"]}':
             return True
-        if auth == f'Basic {__import__("base64").b64encode(b"admin:" + API_KEY.encode()).decode()}':
+        if auth == f'Basic {__import__("base64").b64encode(b"admin:" + _auth_state["api_key"].encode()).decode()}':
             return True
         if not auth:
             return True
@@ -372,7 +373,7 @@ class Handler(BaseHTTPRequestHandler):
             return True
 
         if path == '/api/apikey' and method == 'GET':
-            self._send_json({'api_key': API_KEY})
+            self._send_json({'api_key': _auth_state['api_key']})
             return True
 
         if path == '/api/apikey' and method == 'POST':
@@ -380,8 +381,7 @@ class Handler(BaseHTTPRequestHandler):
             key_file = WINVPS_DIR / 'config' / 'web-api.key'
             key_file.write_text(new_key)
             key_file.chmod(0o600)
-            global API_KEY
-            API_KEY = new_key
+            _auth_state['api_key'] = new_key
             log.info('API key rotated')
             self._send_json({'status': 'ok', 'api_key': new_key})
             return True
@@ -470,8 +470,8 @@ if __name__ == '__main__':
     server = ThreadedServer(('0.0.0.0', PORT), Handler)
     log.info(f'WinVPS Web Dashboard started on port {PORT}')
     print(f'WinVPS Web Dashboard running on http://0.0.0.0:{PORT}')
-    print(f'API key: {API_KEY[:8]}...')
-    print(f'Auth: Authorization: Bearer {API_KEY}')
+    print(f'API key: {_auth_state["api_key"][:8]}...')
+    print(f'Auth: Authorization: Bearer {_auth_state["api_key"]}')
     try:
         server.serve_forever()
     except KeyboardInterrupt:

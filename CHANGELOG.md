@@ -18,6 +18,7 @@
 - Service log viewer endpoint (`GET /api/logs/:service`)
 
 ### Fixed
+- Python 3.14 syntax error: removed `global` keyword, use mutable state dict
 - Replaced en-dash (U+2013) and em-dash (U+2014) characters with ASCII `-` across all 23 `.ps1` files (PowerShell 5.1 parser fix)
 - Renamed `$Args` to `$CmdArgs` in CLI to avoid PowerShell reserved variable
 - Fixed `Ensure-Dirs` array syntax for PS5.1 compatibility
