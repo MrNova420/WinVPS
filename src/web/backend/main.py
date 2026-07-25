@@ -255,7 +255,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({'services': self._scan_services()})
             return True
 
-        m = re.match(r'^/api/services/(\w+)/(start|stop)$', path)
+        m = re.match(r'^/api/services/(\w+)/(start|stop|remove)$', path)
         if m and method == 'POST':
             name, action = m.group(1), m.group(2)
             safe = sanitize_service_name(name)
@@ -263,27 +263,67 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json({'status': 'error', 'message': 'invalid service name'}, 400)
                 return True
             if action == 'start':
-                script = WINVPS_DIR / 'src' / 'core' / f'{safe}.ps1'
-                if script.exists():
-                    r = run_cmd(f'powershell -NoProfile -ExecutionPolicy Bypass -File "{script}" start')
+                svc_mgr = WINVPS_DIR / 'src' / 'core' / 'service-manager.ps1'
+                if svc_mgr.exists():
+                    r = run_cmd(f'powershell -NoProfile -ExecutionPolicy Bypass -File "{svc_mgr}" start -ServiceName {safe}')
                     ok = r['code'] == 0
                     log.info(f'Service start: {safe} -> {"ok" if ok else "fail"}')
                     self._send_json({'status': 'ok' if ok else 'error', 'message': f'{safe} started' if ok else r['stderr'] or r['stdout']})
                 else:
-                    self._send_json({'status': 'error', 'message': f'No script for {safe}'}, 404)
+                    self._send_json({'status': 'error', 'message': 'service manager not found'}, 500)
                 return True
-            pidf = WINVPS_DIR / 'services' / f'{safe}.pid'
-            if pidf.exists():
-                try:
-                    pid = int(pidf.read_text().strip())
-                    run_cmd(f'taskkill /PID {pid} /F 2>nul')
-                except (ValueError, Exception):
-                    pass
-                pidf.unlink(missing_ok=True)
-                log.info(f'Service stop: {safe}')
-                self._send_json({'status': 'ok', 'message': f'{safe} stopped'})
+            if action == 'stop':
+                svc_dir = WINVPS_DIR / 'services' / safe / 'pid'
+                if svc_dir.exists():
+                    try:
+                        pid = int(svc_dir.read_text().strip())
+                        run_cmd(f'taskkill /PID {pid} /F 2>nul')
+                    except (ValueError, Exception):
+                        pass
+                    svc_dir.unlink(missing_ok=True)
+                    log.info(f'Service stop: {safe}')
+                    self._send_json({'status': 'ok', 'message': f'{safe} stopped'})
+                else:
+                    self._send_json({'status': 'error', 'message': f'{safe} not running'}, 404)
+                return True
+            if action == 'remove':
+                svc_mgr = WINVPS_DIR / 'src' / 'core' / 'service-manager.ps1'
+                if svc_mgr.exists():
+                    r = run_cmd(f'powershell -NoProfile -ExecutionPolicy Bypass -File "{svc_mgr}" remove -ServiceName {safe}')
+                    log.info(f'Service remove: {safe}')
+                    self._send_json({'status': 'ok', 'message': f'{safe} removed'})
+                else:
+                    self._send_json({'status': 'error', 'message': 'service manager not found'}, 500)
+                return True
+
+        if path == '/api/services/add' and method == 'POST':
+            name = body.get('name', '').strip()
+            script_path = body.get('path', '').strip()
+            svc_type = body.get('type', 'auto').strip()
+            port = int(body.get('port', 0))
+            auto_start = body.get('auto_start', False)
+            health_check = body.get('health_check', '').strip()
+            description = body.get('description', '').strip()
+            depends_on = body.get('depends_on', '').strip()
+
+            if not name or not script_path:
+                self._send_json({'status': 'error', 'message': 'name and path required'}, 400)
+                return True
+
+            safe_name = sanitize_service_name(name)
+            if not safe_name:
+                self._send_json({'status': 'error', 'message': 'invalid service name'}, 400)
+                return True
+
+            svc_mgr = WINVPS_DIR / 'src' / 'core' / 'service-manager.ps1'
+            if svc_mgr.exists():
+                cmd = f'powershell -NoProfile -ExecutionPolicy Bypass -File "{svc_mgr}" add -ServiceName {safe_name} -ScriptPath "{script_path}" -Type {svc_type} -Port {port} -AutoStart ${auto_start} -HealthCheck "{health_check}" -DependsOn "{depends_on}" -Description "{description}"'
+                r = run_cmd(cmd)
+                ok = r['code'] == 0
+                log.info(f'Service add: {safe_name} -> {"ok" if ok else "fail"}')
+                self._send_json({'status': 'ok' if ok else 'error', 'message': f'{safe_name} added' if ok else r['stderr'] or r['stdout']})
             else:
-                self._send_json({'status': 'error', 'message': f'{safe} not running'}, 404)
+                self._send_json({'status': 'error', 'message': 'service manager not found'}, 500)
             return True
 
         m = re.match(r'^/api/logs/(\w+)$', path)
@@ -391,11 +431,39 @@ class Handler(BaseHTTPRequestHandler):
     def _scan_services(self):
         services = []
         svc_dir = WINVPS_DIR / 'services'
+        conf_file = WINVPS_DIR / 'config' / 'services.conf'
+
+        # Load service definitions from services.conf
+        svc_defs = {}
+        if conf_file.exists():
+            for line in conf_file.read_text(encoding='utf-8', errors='replace').splitlines():
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                parts = line.split('|', -1)
+                if len(parts) >= 2:
+                    svc_defs[parts[0].strip()] = {
+                        'name': parts[0].strip(),
+                        'script': parts[1].strip(),
+                        'type': parts[2].strip() if len(parts) >= 3 and parts[2].strip() else 'ps',
+                        'port': parts[3].strip() if len(parts) >= 4 and parts[3].strip() else '0',
+                        'auto_start': parts[4].strip() if len(parts) >= 5 and parts[4].strip() else 'false',
+                        'health_check': parts[5].strip() if len(parts) >= 6 else '',
+                        'depends_on': parts[6].strip() if len(parts) >= 7 else '',
+                        'description': parts[7].strip() if len(parts) >= 8 else '',
+                    }
+
+        # Scan running services from service directories
         if svc_dir.exists():
-            for pidf in sorted(svc_dir.glob('*.pid')):
-                name = pidf.stem
+            for svc_path in sorted(svc_dir.iterdir()):
+                if not svc_path.is_dir():
+                    continue
+                name = svc_path.name
+                pid_file = svc_path / 'pid'
+                if not pid_file.exists():
+                    continue
                 try:
-                    pid = int(pidf.read_text().strip())
+                    pid = int(pid_file.read_text().strip())
                 except (ValueError, Exception):
                     continue
                 alive = run_cmd(f'powershell -NoProfile -Command "if (Get-Process -Id {pid} -ErrorAction SilentlyContinue) {{ \'running\' }} else {{ \'stopped\' }}"', timeout=5)
@@ -403,12 +471,41 @@ class Handler(BaseHTTPRequestHandler):
                 if alive['stdout'] == 'running':
                     m = run_cmd(f'powershell -NoProfile -Command "(Get-Process -Id {pid}).WorkingSet64 / 1MB"', timeout=5)
                     mem = m['stdout'] if m['code'] == 0 else '0'
-                services.append({'name': name, 'pid': pid, 'status': alive['stdout'], 'memory': mem})
+
+                # Merge with definition if available
+                svc_info = svc_defs.get(name, {})
+                services.append({
+                    'name': name,
+                    'pid': pid,
+                    'status': alive['stdout'],
+                    'memory': mem,
+                    'type': svc_info.get('type', 'ps'),
+                    'port': svc_info.get('port', '0'),
+                    'description': svc_info.get('description', ''),
+                    'health_check': svc_info.get('health_check', ''),
+                    'depends_on': svc_info.get('depends_on', ''),
+                })
+
+        # Add services from services.conf that aren't running yet
+        for name, defn in svc_defs.items():
+            if not any(s['name'] == name for s in services):
+                services.append({
+                    'name': name,
+                    'pid': 0,
+                    'status': 'stopped',
+                    'memory': '0',
+                    'type': defn.get('type', 'ps'),
+                    'port': defn.get('port', '0'),
+                    'description': defn.get('description', ''),
+                    'health_check': defn.get('health_check', ''),
+                    'depends_on': defn.get('depends_on', ''),
+                })
+
         return services
 
     def _scan_tunnels(self):
         tunnels = {}
-        for t in ['cloudflared', 'ngrok', 'bore']:
+        for t in ['tailscale', 'cloudflared', 'ngrok', 'bore']:
             r = run_cmd(f'powershell -NoProfile -Command "if (Get-Process -Name {t}* -ErrorAction SilentlyContinue) {{ \'active\' }} else {{ \'inactive\' }}"', timeout=5)
             tunnels[t] = r['stdout'] if r['code'] == 0 else 'unknown'
         return tunnels

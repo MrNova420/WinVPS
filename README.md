@@ -1,125 +1,173 @@
-# WinVPS
+<p align="center">
+  <img src="https://img.shields.io/badge/version-2.0.0-blue?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License">
+  <img src="https://img.shields.io/badge/powershell-5.1%2B-blue?style=for-the-badge" alt="PowerShell">
+  <img src="https://img.shields.io/badge/platform-Windows-0078d4?style=for-the-badge" alt="Windows">
+</p>
 
-A Windows fork of [AnVPS](https://github.com/MrNova420/AnVPS) -- turn any Windows machine into a self-managed, auto-healing, remotely accessible VPS.
+<h1 align="center">WinVPS</h1>
 
-## Features
+<p align="center">
+  <strong>Turn any Windows machine into a self-managed, auto-healing, remotely accessible VPS.</strong>
+</p>
 
-- **Service Supervisor** -- auto-restarts crashed services
-- **System Health Monitoring** -- CPU, RAM, disk, network, temperature
-- **Web Dashboard** -- dark-themed control panel at `http://localhost:7080`
-- **Natural Language Shell** -- type what you want in plain English
-- **Security Hardening** -- SSH lockdown, firewall, fail2ban
-- **Auto-Updates** -- self-updating, package management
-- **Backup System** -- timestamped compressed backups
-- **Cloud Tunnels** -- Cloudflare, ngrok, bore, WireGuard for remote access
-- **Tor Gateway** -- optional Tor hidden service support
-- **Stealth Mode** -- scheduled availability, decoy services
-- **Obfuscation** -- hostname, MAC, SSH key, HTTP header randomization
-- **Tamper Detection** -- integrity checks with auto-wipe on failure
-- **VPN Kill Switch** -- blocks all traffic outside VPN
-- **Telegram/Discord Bots** -- remote management via chat
-- **RAM Tiering** -- automatic optimization for 512MB to 16GB+
+<p align="center">
+  Host any project — Node.js, Python, Go, .NET, Rust, Java, Docker — as a managed service<br>
+  with one command. Monitor everything from a beautiful web dashboard.
+</p>
+
+---
+
+## What is WinVPS?
+
+WinVPS transforms a Windows PC into a production-grade VPS. Install it once, and your machine becomes a self-healing server that:
+
+- **Manages any project** as a service with auto-restart, health checks, and dependency resolution
+- **Exposes everything remotely** via Tailscale, Cloudflare, ngrok, or SSH
+- **Heals itself** — crashed services restart automatically with exponential backoff
+- **Monitors everything** — CPU, memory, disk, per-service metrics in a real-time dashboard
+- **Secures itself** — fail2ban, firewall hardening, stealth mode, tamper detection
 
 ---
 
 ## Quick Start
 
-### 1. Install (Run PowerShell as Administrator)
+### Install (Run PowerShell as Administrator)
 
-**One-liner:**
 ```powershell
+# One-liner
 irm https://raw.githubusercontent.com/MrNova420/WinVPS/master/dist/winvps-portable.ps1 | iex
-```
 
-**Or clone + install:**
-```powershell
+# Or clone + install
 git clone https://github.com/MrNova420/WinVPS.git C:\WinVPS
 cd C:\WinVPS
 .\setup\Install-WinVPS.ps1
 ```
 
-### 2. What it installs
-
-- OpenSSH Server (port 7022)
-- Python 3 (for web backend)
-- WinVPS services and dashboard
-- Windows Firewall rules
-- Auto-start Task Scheduler entry
-
-### 3. First login
+### Add Your First Project
 
 ```powershell
-# Check everything is running
-winvps status
+# From a local project
+winvps service add my-app "D:\projects\my-app\server.js" --port 3000 --type node
 
-# Run diagnostics
-winvps doctor
+# From a Git repo
+.\setup\Setup-Project.ps1 -RepoUrl "https://github.com/user/app" -Name "myapp" -Port 3000
 
-# Open the natural language shell
-winvps shell
+# Or use the interactive wizard
+winvps service add
 ```
 
-### 4. Web dashboard
+### Manage Everything
 
-Open **http://localhost:7080** in your browser.
+```powershell
+winvps status                    # System overview
+winvps service list              # All services
+winvps service start my-app      # Start a service
+winvps service stop my-app       # Stop a service
+winvps service detail my-app     # Full service info
+winvps service health my-app     # Health check
+winvps service deps              # Dependency graph
+winvps shell                     # Natural language interface
+```
 
-API key is auto-generated at `C:\WinVPS\config\web-api.key`.
+### Open the Dashboard
+
+```
+http://localhost:7080
+```
 
 ---
 
-## Natural Language Shell
+## Features
 
-The fastest way to use WinVPS. Type what you want in plain English.
+### Service Management
+
+Any project becomes a managed service with one command:
+
+| Feature | Description |
+|---------|-------------|
+| **Multi-language** | Node.js, Python, Go, .NET, PowerShell, Docker, any executable |
+| **Auto-detection** | Detects project type from file extension |
+| **Dependency resolution** | Start services in correct order with `depends_on` |
+| **Health checks** | HTTP endpoint, TCP port, or process-based checks |
+| **Auto-restart** | Exponential backoff, max 5 attempts, then mark as failed |
+| **Per-service env** | Isolated `.env` files for each service |
+| **Metrics** | Memory, CPU, disk, uptime per service |
+| **Backup/restore** | Per-service data backup and recovery |
+| **Log management** | Isolated stdout/stderr logs with rotation |
 
 ```powershell
-# Interactive mode - talk to WinVPS
-winvps shell
+# Add any project
+winvps service add api "D:\api\main.py" --port 8000 --type python --auto --health http://localhost:8000/docs
 
-# One-shot mode - ask and execute
-winvps shell "how's my server doing"
-winvps shell "start the web server"
-winvps shell "show me recent ssh logs"
-winvps shell "create a backup"
-winvps shell "open a tunnel"
-winvps shell "harden the server"
+# View dependency graph
+winvps service deps
+#   ● ssh
+#   ● web <-- fail2ban
+#   ● api <-- redis, postgres
+#   ○ redis
+#   ○ postgres
+
+# Run health check
+winvps service health api
+# healthy: HTTP 200 OK (latency: 45ms)
 ```
 
-### How it works
+### Remote Access
+
+Four tunnel providers for accessing your machine from anywhere:
+
+| Provider | Cost | Permanent URL | Setup |
+|----------|------|---------------|-------|
+| **Tailscale Funnel** | Free | `https://your-host.tail.ts.net` | `tailscale up` + `winvps tunnel start tailscale` |
+| **Cloudflare** | Free | `https://your-tunnel.trycloudflare.com` | `cloudflared tunnel create` |
+| **ngrok** | Free/Paid | Changes each restart | `ngrok config add-authtoken TOKEN` |
+| **bore** | Free | Changes each restart | Auto-downloaded |
+
+### Natural Language Shell
+
+Talk to your server in plain English:
 
 ```
-  you> how's my server doing
-
-  +-- Suggested Command --------------------------+
-  |  winvps status                                |
-  |  Show system status (CPU, RAM, disk, uptime)  |
-  +-----------------------------------------------+
-
-  Execute? [Y]es  [E]dit  [N]o  [S]kip
-  > y
+You> how's my server doing
+You> start the web server
+You> show me recent ssh logs
+You> create a backup
+You> open a tunnel
+You> harden the server
 ```
 
-Type `?` for examples, `exit` to quit.
+### Security Suite
 
-### What you can say
+| Tool | Description |
+|------|-------------|
+| **Fail2ban** | Brute-force protection with auto-banning |
+| **Firewall** | Automated Windows Firewall rules |
+| **Stealth Mode** | Schedule when your machine is available |
+| **Obfuscation** | Randomize hostname, MAC, SSH keys, HTTP headers |
+| **Tamper Detection** | File integrity monitoring with auto-wipe |
+| **Encrypted Storage** | BitLocker-encrypted volumes |
+| **VPN Kill Switch** | Block all traffic outside VPN |
 
-| Say this | WinVPS runs |
-|----------|-------------|
-| `how's my server doing` | `winvps status` |
-| `start the web server` | `winvps service start web` |
-| `stop ssh` | `winvps service stop ssh` |
-| `restart the database` | `winvps service restart postgres` |
-| `show me recent errors` | `winvps logs` |
-| `show ssh logs` | `winvps logs ssh 50` |
-| `run diagnostics` | `winvps doctor` |
-| `create a backup` | `winvps backup create` |
-| `open a tunnel` | `winvps tunnel start` |
-| `harden the server` | `winvps security harden` |
-| `start fail2ban` | `winvps fail2ban start` |
-| `enable stealth mode` | `winvps stealth enable` |
-| `show all config` | `winvps config show` |
-| `what version is this` | `winvps version` |
+### Web Dashboard
 
-Works on Windows (PowerShell 5.1+/7+) and Linux (Bash).
+Beautiful, real-time dashboard at `http://localhost:7080`:
+
+- **Overview** — CPU, memory, disk with progress bars
+- **Services** — Start/stop/restart, add new services, health status
+- **Tunnels** — Manage Tailscale, Cloudflare, ngrok, bore
+- **Logs** — Live log viewer with search
+- **Configuration** — Edit settings in-browser
+- **Storage** — Disk usage, backup management
+
+### One-Shot Project Bootstrapper
+
+```powershell
+# Clone + install + register + start — all in one command
+.\setup\Setup-Project.ps1 -RepoUrl "https://github.com/user/app" -Name "myapp" -Port 3000 -Tailscale
+```
+
+Handles: Git clone, prerequisite installation (winget), dependency install, service registration, startup, and optional tunnel setup.
 
 ---
 
@@ -129,235 +177,214 @@ Works on Windows (PowerShell 5.1+/7+) and Linux (Bash).
 
 | Command | Description |
 |---------|-------------|
-| `winvps shell` | Natural language shell (ask in plain English) |
-| `winvps status` | System overview (uptime, CPU, RAM, services, network) |
-| `winvps service list` | List all available and running services |
-| `winvps service start ssh` | Start a service |
-| `winvps service stop web` | Stop a service |
-| `winvps service restart ssh` | Restart a service |
-| `winvps service setup` | Run initial service setup |
-| `winvps monitor` | Live resource monitor (refreshes every 3s) |
-| `winvps monitor 5` | Monitor with 5 second refresh |
-| `winvps doctor` | Run diagnostics, check all services |
-
-### Backup
-
-| Command | Description |
-|---------|-------------|
-| `winvps backup create` | Create timestamped backup |
-| `winvps backup list` | List all backups |
-| `winvps backup restore` | Restore latest backup |
-
-### Configuration
-
-| Command | Description |
-|---------|-------------|
-| `winvps config show` | Show all config |
-| `winvps config get WINVPS_SSH_PORT` | Get a config value |
-| `winvps config set WINVPS_SSH_PORT 7022` | Set a config value |
-| `winvps config load full` | Load a profile (minimal/dev/full/stealth/ghost/hardened) |
-
-### Logs
-
-| Command | Description |
-|---------|-------------|
-| `winvps logs` | List available log files |
-| `winvps logs ssh 100` | Last 100 lines of SSH logs |
-| `winvps logs web` | Web server logs |
-
-### Security
-
-| Command | Description |
-|---------|-------------|
-| `winvps security status` | Show security status |
-| `winvps security scan` | Scan for issues |
-| `winvps security harden` | Lock down SSH + firewall |
-| `winvps fail2ban start` | Start brute-force protection |
-| `winvps fail2ban stop` | Stop brute-force protection |
-| `winvps tamper init` | Initialize tamper detection |
-| `winvps tamper verify` | Verify file integrity |
-| `winvps tamper status` | Show tamper status |
-
-### Stealth & Obfuscation
-
-| Command | Description |
-|---------|-------------|
-| `winvps stealth enable` | Enable stealth mode |
-| `winvps stealth disable` | Disable stealth mode |
-| `winvps stealth status` | Show stealth status |
-| `winvps obfuscate all` | Randomize hostname, MAC, SSH keys |
-| `winvps obfuscate hostname` | Randomize hostname only |
-| `winvps obfuscate ssh` | Randomize SSH host keys |
-| `winvps obfuscate mac` | Randomize MAC address |
+| `winvps status` | System overview |
+| `winvps shell` | Natural language shell |
+| `winvps service list` | List all services |
+| `winvps service add` | Add a project as a service |
+| `winvps service remove` | Remove a service |
+| `winvps service start <name>` | Start a service |
+| `winvps service stop <name>` | Stop a service |
+| `winvps service restart <name>` | Restart a service |
+| `winvps service detail <name>` | Full service info |
+| `winvps service health <name>` | Health check |
+| `winvps service metrics <name>` | Resource usage |
+| `winvps service deps` | Dependency graph |
+| `winvps service logs <name>` | View logs |
+| `winvps service backup <name>` | Backup service data |
+| `winvps service exec <name> "cmd"` | Execute in service context |
+| `winvps monitor` | Live resource monitor |
+| `winvps doctor` | Diagnostics |
 
 ### Networking
 
 | Command | Description |
 |---------|-------------|
+| `winvps tunnel start tailscale` | Start Tailscale Funnel |
 | `winvps tunnel start cloudflare` | Start Cloudflare tunnel |
 | `winvps tunnel start ngrok` | Start ngrok tunnel |
 | `winvps tunnel start bore` | Start bore tunnel |
-| `winvps tunnel stop` | Stop active tunnel |
-| `winvps tunnel status` | Show tunnel status |
-| `winvps tor start` | Start Tor gateway |
-| `winvps tor stop` | Stop Tor gateway |
-| `winvps killswitch enable` | Enable VPN kill switch |
-| `winvps killswitch disable` | Disable VPN kill switch |
+| `winvps tunnel stop` | Stop all tunnels |
+| `winvps tunnel status` | Tunnel status |
 
-### Encryption
+### Security
 
 | Command | Description |
 |---------|-------------|
+| `winvps security harden` | Lock down SSH + firewall |
+| `winvps fail2ban start` | Start brute-force protection |
+| `winvps stealth enable` | Enable stealth mode |
+| `winvps obfuscate all` | Randomize device identity |
 | `winvps encrypt init` | Initialize encrypted storage |
-| `winvps encrypt unmount` | Unmount encrypted volume |
-| `winvps encrypt status` | Show encryption status |
+| `winvps tamper init` | Initialize tamper detection |
 
-### Other
+### Data
 
 | Command | Description |
 |---------|-------------|
-| `winvps tier info` | Show RAM tier and recommendations |
-| `winvps uninstall` | Remove WinVPS completely |
-| `winvps help` | Show all commands |
-| `winvps version` | Show version |
+| `winvps backup create` | Create backup |
+| `winvps backup list` | List backups |
+| `winvps backup restore` | Restore latest |
+| `winvps logs` | List log files |
+| `winvps config show` | Show configuration |
+| `winvps config set KEY VALUE` | Set config value |
+
+See [USAGE.md](USAGE.md) for the complete reference.
 
 ---
 
-## Remote Access Setup
+## Architecture
 
-### Option 1: Cloudflare Tunnel (Recommended - Free)
-
-1. Sign up at https://dash.cloudflare.com
-2. Install cloudflared:
-   ```powershell
-   winget install Cloudflare.cloudflared
-   ```
-3. Authenticate:
-   ```powershell
-   cloudflared tunnel login
-   ```
-4. Create a tunnel:
-   ```powershell
-   cloudflared tunnel create winvps
-   ```
-5. Start the tunnel:
-   ```powershell
-   winvps tunnel start cloudflare
-   ```
-
-This gives you a permanent `https://your-tunnel.trycloudflare.com` URL accessible from anywhere.
-
-### Option 2: ngrok (Quick, temporary)
-
-1. Sign up at https://ngrok.com and get your authtoken
-2. Install ngrok:
-   ```powershell
-   winget install Ngrok.Ngrok
-   ```
-3. Configure:
-   ```powershell
-   ngrok config add-authtoken YOUR_TOKEN
-   ```
-4. Start:
-   ```powershell
-   winvps tunnel start ngrok
-   ```
-
-### Option 3: SSH Reverse Tunnel
-
-If you have a public VPS:
-```powershell
-# On your WinVPS machine, connect to your public VPS
-ssh -R 7022:localhost:22 root@your-public-vps-ip
 ```
-
-### Option 4: Direct SSH (Port Forwarding)
-
-On your router, forward port 7022 to your machine's local IP, then:
-```powershell
-ssh -p 7022 yourusername@your-public-ip
+C:\WinVPS\
+├── src/
+│   ├── cli/winvps.ps1              # Main CLI (25+ commands)
+│   ├── core/
+│   │   ├── service-manager.ps1     # Service lifecycle management
+│   │   ├── supervisor.ps1          # Auto-healing process manager
+│   │   └── ...                     # 17 core modules
+│   ├── web/
+│   │   ├── backend/main.py         # Python API server
+│   │   └── frontend/               # Dashboard (HTML/CSS/JS)
+│   ├── shell/                      # Natural language shell
+│   ├── tunnels/tunnel-manager.ps1  # Tailscale/Cloudflare/ngrok/bore
+│   └── bots/                       # Telegram/Discord bots
+├── config/
+│   ├── winvps.conf                 # Main configuration
+│   ├── services.conf               # Service definitions
+│   └── profiles/                   # Pre-configured profiles
+├── services/                       # Per-service directories
+│   └── <name>/
+│       ├── service.conf            # Service config
+│       ├── pid                     # Process ID
+│       ├── .env                    # Environment variables
+│       ├── data/                   # Persistent data
+│       ├── logs/                   # stdout/stderr logs
+│       └── secrets/                # Encrypted secrets
+├── setup/
+│   ├── Install-WinVPS.ps1          # Installer
+│   ├── Setup-Project.ps1           # Project bootstrapper
+│   └── Uninstall-WinVPS.ps1        # Uninstaller
+└── dist/
+    └── winvps-portable.ps1         # One-command installer
 ```
 
 ---
 
-## Telegram Bot Setup
+## Configuration
 
-1. Message [@BotFather](https://t.me/BotFather) on Telegram and create a bot
-2. Copy the bot token
-3. Add to your config:
-   ```powershell
-   winvps config set WINVPS_TELEGRAM_BOT_TOKEN "YOUR_BOT_TOKEN"
-   ```
-4. Get your chat ID by messaging your bot, then visit:
-   ```
-   https://api.telegram.org/botYOUR_BOT_TOKEN/getUpdates
-   ```
-5. Set your chat ID:
-   ```powershell
-   winvps config set WINVPS_TELEGRAM_CHAT_ID "YOUR_CHAT_ID"
-   ```
-6. Start the bot:
-   ```powershell
-   .\src\bots\shell-telegram.ps1 start
-   ```
+### Main Config (`config/winvps.conf`)
 
-### Bot Commands
-- `/status` - System status
-- `/services` - List running services
-- `/health` - Run health check
-- `/backup` - Create backup
-- `/help` - Show commands
+```ini
+WINVPS_SSH_PORT=7022
+WINVPS_WEB_PORT=7080
+WINVPS_TIER="auto"
+WINVPS_AUTO_UPDATE=true
+WINVPS_WATCHDOG=true
+WINVPS_TUNNEL_TYPE="cloudflare"
+WINVPS_TAILSCALE_HOSTNAME=""
+```
 
----
+### Service Definitions (`config/services.conf`)
 
-## Discord Bot Setup
+```
+# name|script|type|port|auto_start|health_check|depends_on|description
+ssh|src/core/ssh.ps1|ps|7022|true|||OpenSSH server
+web|src/core/httpd.ps1|ps|7080|true|||Web dashboard
+```
 
-1. Create a Discord bot at https://discord.com/developers/applications
-2. Copy the bot token and set it:
-   ```powershell
-   winvps config set WINVPS_DISCORD_BOT_TOKEN "YOUR_BOT_TOKEN"
-   ```
-3. Get your channel ID (enable Developer Mode in Discord, right-click channel > Copy ID):
-   ```powershell
-   winvps config set WINVPS_DISCORD_CHANNEL_ID "YOUR_CHANNEL_ID"
-   ```
-4. Start the bot:
-   ```powershell
-   .\src\bots\shell-discord.ps1 start
-   ```
+### Per-Service Config (`services/<name>/service.conf`)
 
-### Bot Commands
-- `!status` - System status
-- `!health` - Health check
-- `!backup` - Create backup
-- `!help` - Show commands
+```ini
+WINVPS_SVC_NAME=my-app
+WINVPS_SVC_TYPE=node
+WINVPS_SVC_PORT=3000
+WINVPS_SVC_PID=12345
+WINVPS_SVC_STARTED=2026-07-25 10:30:00
+```
+
+### Per-Service Environment (`services/<name>/.env`)
+
+```
+NODE_ENV=production
+DATABASE_URL=postgresql://localhost:5432/mydb
+SECRET_KEY=***
+```
 
 ---
 
 ## RAM Tiers
 
-WinVPS automatically detects your system's RAM and optimizes accordingly:
+WinVPS automatically detects your system's RAM and optimizes:
 
 | Tier | RAM | Description |
 |------|-----|-------------|
-| Shadow | <=512MB | Ultra-light, SSH + minimal web only |
-| Lite | <=2GB | Core services only |
-| Standard | <=8GB | Balanced feature set |
-| Full | >8GB | Everything enabled |
+| **Shadow** | ≤512MB | Ultra-light, SSH + minimal web only |
+| **Lite** | ≤2GB | Core services only |
+| **Standard** | ≤8GB | Balanced feature set |
+| **Full** | >8GB | Everything enabled |
 
-Check your tier:
 ```powershell
 winvps tier info
 ```
 
 ---
 
-## Profiles
+## Web Dashboard
 
-Switch between pre-configured profiles:
+### API Key Authentication
+
+Auto-generated on first run at `config/web-api.key`:
 
 ```powershell
-winvps config load minimal    # Minimal setup
+# Get API key
+type C:\WinVPS\config\web-api.key
+
+# Use with API
+$key = Get-Content C:\WinVPS\config\web-api.key
+Invoke-RestMethod -Uri http://localhost:7080/api/status -Headers @{Authorization="Bearer $key"}
+```
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/status` | GET | System status |
+| `/api/services` | GET | List services |
+| `/api/services/add` | POST | Add service |
+| `/api/services/:name/start` | POST | Start service |
+| `/api/services/:name/stop` | POST | Stop service |
+| `/api/services/:name/remove` | POST | Remove service |
+| `/api/logs/:service` | GET | Service logs |
+| `/api/config` | GET/POST | Configuration |
+| `/api/health` | GET | Health check |
+| `/api/storage` | GET | Disk usage |
+| `/api/backups` | GET | List backups |
+| `/api/backup` | POST | Create backup |
+
+---
+
+## Telegram & Discord Bots
+
+Manage your server from chat:
+
+```powershell
+# Telegram
+winvps config set WINVPS_TELEGRAM_BOT_TOKEN "YOUR_TOKEN"
+.\src\bots\shell-telegram.ps1 start
+
+# Discord
+winvps config set WINVPS_DISCORD_BOT_TOKEN "YOUR_TOKEN"
+.\src\bots\shell-discord.ps1 start
+```
+
+---
+
+## Profiles
+
+Pre-configured profiles for different use cases:
+
+```powershell
+winvps config load minimal     # Minimal setup
 winvps config load dev         # Development
 winvps config load full        # Everything on
 winvps config load hardened    # Security focused
@@ -367,110 +394,18 @@ winvps config load ghost       # Ultra-stealth, auto-wipe
 
 ---
 
-## Configuration
+## Contributing
 
-Main config file: `C:\WinVPS\config\winvps.conf`
-
-Key settings:
-```
-WINVPS_SSH_PORT=7022
-WINVPS_WEB_PORT=7080
-WINVPS_AUTO_UPDATE=true
-WINVPS_AUTO_BACKUP=true
-WINVPS_BACKUP_INTERVAL="weekly"
-WINVPS_WATCHDOG=true
-WINVPS_LOG_LEVEL="info"
-```
-
----
-
-## Web Dashboard
-
-Visit **http://localhost:7080** after installation.
-
-### Features
-- System overview (CPU, RAM, disk, uptime)
-- Service management (start/stop/restart)
-- Live logs viewer
-- Configuration editor
-- Storage analyzer
-- Backup management
-- API key authentication (auto-generated on first run)
-
-### API Key Auth
-
-The dashboard requires a Bearer token for API access. The key is auto-generated on first run and stored at `config/web-api.key`.
-
-```powershell
-# Get your API key
-type C:\WinVPS\config\web-api.key
-
-# Use with curl/Invoke-WebRequest
-$key = Get-Content C:\WinVPS\config\web-api.key
-Invoke-RestMethod -Uri http://localhost:7080/api/status -Headers @{Authorization="Bearer $key"}
-
-# Rotate the key
-Invoke-RestMethod -Uri http://localhost:7080/api/apikey -Method POST -Headers @{Authorization="Bearer $key"}
-```
-
-### API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/status` | GET | System status overview |
-| `/api/services` | GET | List all services |
-| `/api/services/:name/start` | POST | Start a service |
-| `/api/services/:name/stop` | POST | Stop a service |
-| `/api/logs/:service` | GET | Get service logs |
-| `/api/config` | GET/POST | Read/write configuration |
-| `/api/health` | GET | Run health check |
-| `/api/storage` | GET | Storage usage |
-| `/api/backups` | GET | List backups |
-| `/api/backup` | POST | Create backup |
-| `/api/apikey` | GET/POST | Get/rotate API key |
-
----
-
-## Project Structure
-
-```
-C:\WinVPS\
-  src/
-    cli/winvps.ps1           # Main CLI (25+ commands)
-    shell/shell.ps1          # Natural language shell (PS)
-    shell/shell.sh           # Natural language shell (Bash)
-    core/                    # 17 core modules
-    web/backend/main.py      # Python API server
-    web/frontend/index.html  # Dashboard UI
-    bots/                    # Telegram/Discord bots
-    tunnels/                 # Tunnel manager
-  config/
-    winvps.conf              # Main config
-    web-api.key              # Auto-generated API key
-    profiles/                # Pre-configured profiles
-  setup/
-    Install-WinVPS.ps1       # Installer
-    Uninstall-WinVPS.ps1     # Uninstaller
-  dist/
-    winvps-portable.ps1      # One-command portable installer
-  tests/                     # Test suite
-```
-
----
-
-## Uninstall
-
-```powershell
-.\setup\Uninstall-WinVPS.ps1
-```
-
-Or from the CLI:
-```powershell
-winvps uninstall
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
 ## License
 
-MIT -- see [LICENSE](LICENSE)
+MIT — see [LICENSE](LICENSE)
+
+---
+
+<p align="center">
+  <strong>Built with care for the home server community.</strong>
+</p>
