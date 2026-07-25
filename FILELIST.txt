@@ -2,6 +2,8 @@
 
 # ===== Core Source =====
 src/cli/winvps.ps1                          # Main CLI entry point (25+ commands)
+src/shell/shell.ps1                         # Natural language shell (PS 5.1+/7+)
+src/shell/shell.sh                          # Natural language shell (Bash/Linux)
 src/core/supervisor.ps1                     # Service manager + watchdog auto-restart
 src/core/healthcheck.ps1                    # CPU/RAM/disk/services/network/temp
 src/core/ssh.ps1                            # OpenSSH server management

@@ -63,6 +63,8 @@ winvps doctor
 
 | Command | Description |
 |---------|-------------|
+| `winvps shell` | Natural language shell (ask in plain English) |
+| `winvps shell "start the web server"` | One-shot: translate and execute |
 | `winvps status` | System overview (uptime, CPU, RAM, services, network) |
 | `winvps service list` | List all available and running services |
 | `winvps service start ssh` | Start a service |
@@ -342,6 +344,46 @@ Invoke-RestMethod -Uri http://localhost:7080/api/status -Headers @{Authorization
 # Rotate the key
 Invoke-RestMethod -Uri http://localhost:7080/api/apikey -Method POST -Headers @{Authorization="Bearer $key"}
 ```
+
+---
+
+## Natural Language Shell
+
+Type what you want in plain English. WinVPS translates it to the correct command, shows it in a box, and asks you to approve/edit/execute.
+
+```powershell
+# Interactive mode
+winvps shell
+
+# One-shot mode
+winvps shell "how's my server doing"
+winvps shell "start the web server"
+winvps shell "show me recent ssh logs"
+winvps shell "create a backup"
+winvps shell "open a tunnel"
+winvps shell "harden the server"
+```
+
+### What you can say
+
+| Say this | WinVPS runs |
+|----------|-------------|
+| `how's my server doing` | `winvps status` |
+| `start the web server` | `winvps service start web` |
+| `stop ssh` | `winvps service stop ssh` |
+| `restart the database` | `winvps service restart postgres` |
+| `show me recent errors` | `winvps logs` |
+| `show ssh logs` | `winvps logs ssh 50` |
+| `run diagnostics` | `winvps doctor` |
+| `create a backup` | `winvps backup create` |
+| `open a tunnel` | `winvps tunnel start` |
+| `harden the server` | `winvps security harden` |
+| `start fail2ban` | `winvps fail2ban start` |
+| `enable stealth mode` | `winvps stealth enable` |
+| `show all config` | `winvps config show` |
+| `what version is this` | `winvps version` |
+
+Works on Windows (PowerShell 5.1+/7+) and Linux (Bash).
 
 ---
 

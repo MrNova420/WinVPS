@@ -3,6 +3,7 @@
 ## [1.1.0] — 2026-07-25
 
 ### Added
+- Natural language shell (`winvps shell`) — type plain English, get the right command with approve/edit/execute UX
 - Web dashboard API key authentication (auto-generated, stored in `config/web-api.key`)
 - Rate limiting on web API (120 requests/minute per IP)
 - Input sanitization on all CLI commands and web API endpoints

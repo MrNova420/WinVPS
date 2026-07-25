@@ -385,6 +385,7 @@ function Show-Help {
     Write-Host '  Usage: winvps <command> [options]'
     Write-Host ''
     Write-Host '  Core:'
+    Write-Host '    shell               Natural language shell (ask in plain English)'
     Write-Host '    status              Show system status'
     Write-Host '    service             Manage services (list|start|stop|restart|setup)'
     Write-Host '    monitor [interval]  Live resource monitor'
@@ -421,6 +422,14 @@ function Invoke-Uninstall {
     } else { Warn 'Uninstaller not found - remove C:\WinVPS manually' }
 }
 
+# --- SHELL (Natural Language) ---
+function Invoke-Shell {
+    $shellScript = Join-Path $SrcDir 'shell\shell.ps1'
+    if (Test-Path $shellScript) {
+        & powershell -NoProfile -ExecutionPolicy Bypass -File $shellScript @CmdArgs
+    } else { Err 'Natural language shell not found' }
+}
+
 # --- MAIN ---
 Ensure-Dirs
 
@@ -442,6 +451,7 @@ switch ($Command) {
     'killswitch' { Invoke-KillswitchCmd -Action ($CmdArgs | Select-Object -First 1) }
     'fail2ban'   { Invoke-Fail2banCmd -Action ($CmdArgs | Select-Object -First 1) }
     'tier'       { Invoke-TierCmd -Action ($CmdArgs | Select-Object -First 1) }
+    'shell'      { Invoke-Shell }
     'uninstall'  { Invoke-Uninstall }
     'version'    { Write-Host "WinVPS v$WinVPSVersion" }
     '--help'     { Show-Help }
