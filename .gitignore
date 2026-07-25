@@ -9,8 +9,12 @@ data/
 backup/
 tmp/
 ssl/
-tunnels/
 sites/
+
+# Runtime tunnels (not source)
+tunnels/*.pid
+tunnels/*.json
+tunnels/*.log
 
 # Python
 __pycache__/
@@ -20,7 +24,6 @@ __pycache__/
 .venv/
 venv/
 *.egg-info/
-dist/
 build/
 
 # PowerShell
