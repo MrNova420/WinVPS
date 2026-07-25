@@ -91,8 +91,8 @@ function Get-ServiceDefinitions {
 
     # Core services always exist
     $coreServices = @(
-        @{ Name='ssh';     Script='ssh.ps1';      Type='ps'; Port=7022; AutoStart=$true;  HealthCheck='';  DependsOn=''; Description='OpenSSH server' },
-        @{ Name='web';     Script='httpd.ps1';     Type='ps'; Port=7080; AutoStart=$true;  HealthCheck='';  DependsOn=''; Description='Web dashboard' },
+        @{ Name='ssh';     Script='ssh.ps1';      Type='ps'; Port=7022; AutoStart=$false; HealthCheck='';  DependsOn=''; Description='OpenSSH server (start manually)' },
+        @{ Name='web';     Script='httpd.ps1';     Type='ps'; Port=7080; AutoStart=$false; HealthCheck='';  DependsOn=''; Description='Web dashboard (localhost only)' },
         @{ Name='fail2ban';Script='fail2ban.ps1';  Type='ps'; Port=0;    AutoStart=$false; HealthCheck='';  DependsOn=''; Description='Brute-force protection' }
     )
 

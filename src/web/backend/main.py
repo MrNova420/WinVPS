@@ -10,6 +10,7 @@ from socketserver import ThreadingMixIn
 
 WINVPS_DIR = Path(os.environ.get('WINVPS_DIR', r'C:\WinVPS'))
 WWW_DIR = WINVPS_DIR / 'data' / 'sites' / 'default'
+HOST = os.environ.get('WINVPS_WEB_HOST', '127.0.0.1')
 PORT = int(os.environ.get('WINVPS_WEB_PORT', '7080'))
 LOG_DIR = WINVPS_DIR / 'logs'
 CONFIG_FILE = WINVPS_DIR / 'config' / 'winvps.conf'
@@ -564,9 +565,9 @@ if __name__ == '__main__':
     index = WWW_DIR / 'index.html'
     if not index.exists():
         index.write_text('<html><body><h1>WinVPS</h1><p>Dashboard loading...</p></body></html>')
-    server = ThreadedServer(('0.0.0.0', PORT), Handler)
-    log.info(f'WinVPS Web Dashboard started on port {PORT}')
-    print(f'WinVPS Web Dashboard running on http://0.0.0.0:{PORT}')
+    server = ThreadedServer((HOST, PORT), Handler)
+    log.info(f'WinVPS Web Dashboard started on {HOST}:{PORT}')
+    print(f'WinVPS Web Dashboard running on http://{HOST}:{PORT}')
     print(f'API key: {_auth_state["api_key"][:8]}...')
     print(f'Auth: Authorization: Bearer {_auth_state["api_key"]}')
     try:

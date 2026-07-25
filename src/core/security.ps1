@@ -155,18 +155,20 @@ function Invoke-SecurityHarden {
     }
 
     if (Test-Admin) {
-        $sshPort = Get-SshPort
-        $webPort = 7080
-        $httpsPort = 7443
-        $filePort = 7444
+        $createFw = Read-Host '  Create firewall rules for WinVPS ports? (y/N)'
+        if ($createFw -eq 'y' -or $createFw -eq 'Y') {
+            $sshPort = Get-SshPort
+            $webPort = 7080
+            $httpsPort = 7443
+            $filePort = 7444
 
-        $existing = Get-NetFirewallRule -DisplayName 'WinVPS*' -ErrorAction SilentlyContinue
-        if ($existing) { $existing | Remove-NetFirewallRule -ErrorAction SilentlyContinue }
+            $existing = Get-NetFirewallRule -DisplayName 'WinVPS*' -ErrorAction SilentlyContinue
+            if ($existing) { $existing | Remove-NetFirewallRule -ErrorAction SilentlyContinue }
 
-        $rules = @(
-            @{ Name="WinVPS-SSH-$sshPort"; LocalPort=$sshPort; Protocol='TCP' },
-            @{ Name="WinVPS-Web-$webPort"; LocalPort=$webPort; Protocol='TCP' },
-            @{ Name="WinVPS-HTTPS-$httpsPort"; LocalPort=$httpsPort; Protocol='TCP' },
+            $rules = @(
+                @{ Name="WinVPS-SSH-$sshPort"; LocalPort=$sshPort; Protocol='TCP' },
+                @{ Name="WinVPS-Web-$webPort"; LocalPort=$webPort; Protocol='TCP' },
+                @{ Name="WinVPS-HTTPS-$httpsPort"; LocalPort=$httpsPort; Protocol='TCP' },
             @{ Name="WinVPS-File-$filePort"; LocalPort=$filePort; Protocol='TCP' }
         )
         foreach ($rule in $rules) {
@@ -175,6 +177,9 @@ function Invoke-SecurityHarden {
         }
         $changes++
         Log 'Firewall rules applied'
+        } else {
+            Log 'Skipping firewall rules'
+        }
     } else {
         Warn 'No admin - skipping firewall rules'
     }

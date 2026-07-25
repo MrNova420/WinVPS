@@ -183,6 +183,11 @@ WINVPS_TUNNEL_TYPE="cloudflare"
 }
 
 function Setup-Firewall {
+    $createRules = Read-Host '  Create Windows Firewall rules for WinVPS ports? (y/N)'
+    if ($createRules -ne 'y' -and $createRules -ne 'Y') {
+        Log 'Skipping firewall rules (you can add them later with: winvps security harden)'
+        return
+    }
     Log 'Configuring Windows Firewall...'
     $existing = Get-NetFirewallRule -DisplayName 'WinVPS*' -ErrorAction SilentlyContinue
     if ($existing) { $existing | Remove-NetFirewallRule }
@@ -201,6 +206,11 @@ function Setup-Firewall {
 }
 
 function Setup-BootTask {
+    $createTask = Read-Host '  Register auto-start task on login? (y/N)'
+    if ($createTask -ne 'y' -and $createTask -ne 'Y') {
+        Log 'Skipping auto-start task (you can start services manually with: winvps service start)'
+        return
+    }
     Log 'Setting up auto-start via Task Scheduler...'
     $action = New-ScheduledTaskAction -Execute 'powershell.exe' `
         -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$WinVPSDir\src\core\supervisor.ps1`" start"
