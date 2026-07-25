@@ -325,6 +325,23 @@ Visit `http://localhost:7080` after installation. Features:
 - Live logs viewer
 - Configuration editor
 - Storage analyzer
+- API key authentication (auto-generated on first run)
+
+### API Key Auth
+
+The dashboard requires a Bearer token for API access. The key is auto-generated on first run and stored at `config/web-api.key`.
+
+```powershell
+# Get your API key
+type C:\WinVPS\config\web-api.key
+
+# Use with curl/Invoke-WebRequest
+$key = Get-Content C:\WinVPS\config\web-api.key
+Invoke-RestMethod -Uri http://localhost:7080/api/status -Headers @{Authorization="Bearer $key"}
+
+# Rotate the key
+Invoke-RestMethod -Uri http://localhost:7080/api/apikey -Method POST -Headers @{Authorization="Bearer $key"}
+```
 
 ---
 

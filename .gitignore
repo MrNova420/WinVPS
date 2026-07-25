@@ -46,3 +46,6 @@ ehthumbs.db
 *.lock
 winvps-update.ps1.bak
 *.bak
+
+# Secrets (auto-generated)
+config/web-api.key

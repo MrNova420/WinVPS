@@ -33,6 +33,7 @@ src/tunnels/tunnel-manager.ps1              # Cloudflare/ngrok/bore/WireGuard tu
 # ===== Configuration =====
 config/winvps.conf                          # Main configuration
 config/winvps-tunnels.json                  # Tunnel provider config
+config/web-api.key                          # Auto-generated API key (not in git)
 config/profiles/minimal.conf                # Minimal profile
 config/profiles/shadow.conf                 # Shadow (512MB) profile
 config/profiles/lite.conf                   # Lite (2GB) profile
