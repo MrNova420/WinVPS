@@ -125,21 +125,34 @@ function Get-ServiceDefinitions {
                 $dependsOn   = if ($parts.Count -ge 7) { $parts[6].Trim() } else { '' }
                 $description = if ($parts.Count -ge 8) { $parts[7].Trim() } else { '' }
 
-                # Auto-detect type from file extension
-                if ($type -eq 'auto' -and $script) {
-                    $ext = [System.IO.Path]::GetExtension($script).ToLower()
-                    $type = switch ($ext) {
-                        '.js'  { 'node' }
-                        '.mjs' { 'node' }
-                        '.ts'  { 'node' }
-                        '.py'  { 'python' }
-                        '.ps1' { 'ps' }
-                        '.cmd' { 'cmd' }
-                        '.bat' { 'cmd' }
-                        '.go'  { 'go' }
-                        default { 'ps' }
-                    }
-                }
+                                     # Auto-detect type from file extension
+                                     if ($type -eq 'auto' -and $script) {
+                                         $ext = [System.IO.Path]::GetExtension($script).ToLower()
+                                         $type = switch ($ext) {
+                                             '.js'  { 'node' }
+                                             '.mjs' { 'node' }
+                                             '.cjs' { 'node' }
+                                             '.ts'  { 'node' }
+                                             '.mts' { 'node' }
+                                             '.cts' { 'node' }
+                                             '.tsx' { 'node' }
+                                             '.jsx' { 'node' }
+                                             '.py'  { 'python' }
+                                             '.pyw' { 'python' }
+                                             '.ps1' { 'ps' }
+                                             '.cmd' { 'cmd' }
+                                             '.bat' { 'cmd' }
+                                             '.go'  { 'go' }
+                                             '.rb'  { 'ruby' }
+                                             '.rs'  { 'rust' }
+                                             '.java' { 'java' }
+                                             '.php'  { 'php' }
+                                             '.lua'  { 'lua' }
+                                             '.sh'  { 'sh' }
+                                             '.bash' { 'sh' }
+                                             default { 'ps' }
+                                         }
+                                     }
 
                 # Resolve script path
                 if ($script -and -not [System.IO.Path]::IsPathRooted($script)) {
@@ -403,21 +416,34 @@ function Add-Service {
         return
     }
 
-    # Auto-detect type
-    if ($Type -eq 'auto') {
-        $ext = [System.IO.Path]::GetExtension($Script).ToLower()
-        $Type = switch ($ext) {
-            '.js'  { 'node' }
-            '.mjs' { 'node' }
-            '.ts'  { 'node' }
-            '.py'  { 'python' }
-            '.ps1' { 'ps' }
-            '.cmd' { 'cmd' }
-            '.bat' { 'cmd' }
-            '.go'  { 'go' }
-            default { 'ps' }
-        }
-    }
+                        # Auto-detect type
+                        if ($Type -eq 'auto') {
+                            $ext = [System.IO.Path]::GetExtension($Script).ToLower()
+                            $Type = switch ($ext) {
+                                '.js'  { 'node' }
+                                '.mjs' { 'node' }
+                                '.cjs' { 'node' }
+                                '.ts'  { 'node' }
+                                '.mts' { 'node' }
+                                '.cts' { 'node' }
+                                '.tsx' { 'node' }
+                                '.jsx' { 'node' }
+                                '.py'  { 'python' }
+                                '.pyw' { 'python' }
+                                '.ps1' { 'ps' }
+                                '.cmd' { 'cmd' }
+                                '.bat' { 'cmd' }
+                                '.go'  { 'go' }
+                                '.rb'  { 'ruby' }
+                                '.rs'  { 'rust' }
+                                '.java' { 'java' }
+                                '.php'  { 'php' }
+                                '.lua'  { 'lua' }
+                                '.sh'  { 'sh' }
+                                '.bash' { 'sh' }
+                                default { 'ps' }
+                            }
+                        }
 
     # Build line
     $line = "$Name|$Script|$Type|$Port|$AutoStart|$HealthCheck|$DependsOn|$Description"
@@ -481,17 +507,32 @@ function Get-LaunchCommand {
                 Args = "/c `"$script`""
             }
         }
-        'node' {
-            $nodePath = Get-Command node -ErrorAction SilentlyContinue
-            if (-not $nodePath) {
-                Warn "Node.js not found in PATH"
-                return $null
-            }
-            return @{
-                File = 'node.exe'
-                Args = "`"$script`""
-            }
-        }
+                            'node' {
+                                $nodePath = Get-Command node -ErrorAction SilentlyContinue
+                                if (-not $nodePath) {
+                                    Warn "Node.js not found in PATH"
+                                    return $null
+                                }
+                                $ext = [System.IO.Path]::GetExtension($script).ToLower()
+                                if ($ext -in '.ts', '.mts', '.cts', '.tsx') {
+                                    $bun = Get-Command bun -ErrorAction SilentlyContinue
+                                    if ($bun) {
+                                        return @{ File = 'bun.exe'; Args = "`"$script`"" }
+                                    }
+                                    $tsx = Get-Command tsx -ErrorAction SilentlyContinue
+                                    if ($tsx) {
+                                        return @{ File = 'node.exe'; Args = "--import tsx `"$script`"" }
+                                    }
+                                    $tsNode = Get-Command ts-node -ErrorAction SilentlyContinue
+                                    if ($tsNode) {
+                                        return @{ File = 'node.exe'; Args = "--loader ts-node/esm `"$script`"" }
+                                    }
+                                }
+                                return @{
+                                    File = 'node.exe'
+                                    Args = "`"$script`""
+                                }
+                            }
         'python' {
             $pythonPath = Get-Command python -ErrorAction SilentlyContinue
             if (-not $pythonPath) {
@@ -539,6 +580,96 @@ function Get-LaunchCommand {
             return @{
                 File = 'docker.exe'
                 Args = "compose -f `"$script`" up -d"
+            }
+        }
+        'deno' {
+            $denoPath = Get-Command deno -ErrorAction SilentlyContinue
+            if (-not $denoPath) {
+                Warn "Deno not found in PATH"
+                return $null
+            }
+            return @{
+                File = 'deno.exe'
+                Args = "run --allow-all `"$script`""
+            }
+        }
+        'bun' {
+            $bunPath = Get-Command bun -ErrorAction SilentlyContinue
+            if (-not $bunPath) {
+                Warn "Bun not found in PATH"
+                return $null
+            }
+            return @{
+                File = 'bun.exe'
+                Args = "`"$script`""
+            }
+        }
+        'ruby' {
+            $rubyPath = Get-Command ruby -ErrorAction SilentlyContinue
+            if (-not $rubyPath) {
+                Warn "Ruby not found in PATH"
+                return $null
+            }
+            return @{
+                File = 'ruby.exe'
+                Args = "`"$script`""
+            }
+        }
+        'rust' {
+            $cargoPath = Get-Command cargo -ErrorAction SilentlyContinue
+            if (-not $cargoPath) {
+                Warn "Cargo/Rust not found in PATH"
+                return $null
+            }
+            return @{
+                File = 'cargo.exe'
+                Args = "run --release"
+            }
+        }
+        'java' {
+            $javaPath = Get-Command java -ErrorAction SilentlyContinue
+            if (-not $javaPath) {
+                Warn "Java not found in PATH"
+                return $null
+            }
+            if ($script -match '\.jar$') {
+                return @{ File = 'java.exe'; Args = "-jar `"$script`"" }
+            }
+            return @{ File = 'java.exe'; Args = "`"$script`"" }
+        }
+        'php' {
+            $phpPath = Get-Command php -ErrorAction SilentlyContinue
+            if (-not $phpPath) {
+                Warn "PHP not found in PATH"
+                return $null
+            }
+            return @{
+                File = 'php.exe'
+                Args = "`"$script`""
+            }
+        }
+        'lua' {
+            $luaPath = Get-Command lua -ErrorAction SilentlyContinue
+            if (-not $luaPath) { $luaPath = Get-Command lua54 -ErrorAction SilentlyContinue }
+            if (-not $luaPath) {
+                Warn "Lua not found in PATH"
+                return $null
+            }
+            return @{
+                File = $luaPath.Source
+                Args = "`"$script`""
+            }
+        }
+        'sh' {
+            return @{
+                File = 'bash.exe'
+                Args = "`"$script`""
+            }
+        }
+        'exec' {
+            return @{
+                File = $script
+                Args = ''
             }
         }
         default {
