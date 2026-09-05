@@ -55,13 +55,23 @@ $ErrorActionPreference = 'Stop'
 $WinVPSDir = $env:WINVPS_DIR; if (-not $WinVPSDir) { $WinVPSDir = 'C:\WinVPS' }
 $SvcMgr    = Join-Path $WinVPSDir 'src\core\service-manager.ps1'
 
-$Green  = "`e[38;5;114m"
-$Yellow = "`e[38;5;221m"
-$Red    = "`e[38;5;203m"
-$Cyan   = "`e[38;5;75m"
-$Dim    = "`e[38;5;243m"
-$Bold   = "`e[1m"
-$NC     = "`e[0m"
+# Detect VT100/ANSI support — fall back to plain text on legacy terminals
+$script:UseAnsi = $false
+try { $script:UseAnsi = [bool]$Host.UI.SupportsVirtualTerminal } catch {}
+try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+
+if ($script:UseAnsi) {
+    $Green  = "`e[38;5;114m"
+    $Yellow = "`e[38;5;221m"
+    $Red    = "`e[38;5;203m"
+    $Cyan   = "`e[38;5;75m"
+    $Dim    = "`e[38;5;243m"
+    $Bold   = "`e[1m"
+    $NC     = "`e[0m"
+} else {
+    $Green  = ''; $Yellow = ''; $Red = ''
+    $Cyan   = ''; $Dim    = ''; $Bold = ''; $NC = ''
+}
 
 function Step($msg)  { Write-Host "${Cyan}[setup]${NC} $msg" }
 function Ok($msg)    { Write-Host "${Green}[  ok]${NC} $msg" }

@@ -19,7 +19,16 @@ $RepoUrl = "https://github.com/WinVPS/WinVPS/archive/refs/heads/$Branch.zip"
 $WinVPSDir = 'C:\WinVPS'
 $TmpDir = "$env:TEMP\winvps-install-$(Get-Random)"
 
-$Green = "`e[0;32m"; $Yellow = "`e[1;33m"; $Red = "`e[0;31m"; $NC = "`e[0m"
+# Detect VT100/ANSI support — fall back to plain text on legacy terminals
+$script:UseAnsi = $false
+try { $script:UseAnsi = [bool]$Host.UI.SupportsVirtualTerminal } catch {}
+try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+
+if ($script:UseAnsi) {
+    $Green = "`e[0;32m"; $Yellow = "`e[1;33m"; $Red = "`e[0;31m"; $NC = "`e[0m"
+} else {
+    $Green = ''; $Yellow = ''; $Red = ''; $NC = ''
+}
 function Log($m)  { Write-Host "${Green}[+]${NC} $m" }
 function Warn($m) { Write-Host "${Yellow}[!]${NC} $m" }
 function Err($m)  { Write-Host "${Red}[x]${NC} $m" }

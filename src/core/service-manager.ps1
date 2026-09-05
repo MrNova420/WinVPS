@@ -54,9 +54,20 @@ $BackupDir    = Join-Path $WinVPSDir 'backup'
 $TmpDir       = Join-Path $WinVPSDir 'tmp'
 
 # --- Theme ---
-$Green  = "`e[38;5;114m"; $Yellow = "`e[38;5;221m"; $Red    = "`e[38;5;203m"
-$Cyan   = "`e[38;5;75m";  $Purple = "`e[38;5;141m"; $Dim    = "`e[38;5;243m"
-$Bold   = "`e[1m"; $NC = "`e[0m"
+# Detect VT100/ANSI support — fall back to plain text on legacy terminals
+$script:UseAnsi = $false
+try { $script:UseAnsi = [bool]$Host.UI.SupportsVirtualTerminal } catch {}
+try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+
+if ($script:UseAnsi) {
+    $Green  = "`e[38;5;114m"; $Yellow = "`e[38;5;221m"; $Red    = "`e[38;5;203m"
+    $Cyan   = "`e[38;5;75m";  $Purple = "`e[38;5;141m"; $Dim    = "`e[38;5;243m"
+    $Bold   = "`e[1m"; $NC = "`e[0m"
+} else {
+    $Green  = ''; $Yellow = ''; $Red    = ''
+    $Cyan   = ''; $Purple = ''; $Dim    = ''
+    $Bold   = ''; $NC     = ''
+}
 
 function Log($msg)  { Write-Host "${Green}[svc]${NC} $msg" }
 function Warn($msg) { Write-Host "${Yellow}[svc]${NC} $msg" }

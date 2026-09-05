@@ -113,7 +113,7 @@ function Start-PowerShellHttpd {
         $listener.Start()
     }
 
-    $pid = $PID
+    $pid = $proc.Id
     $pid | Out-File -FilePath $PidFile -Encoding ascii -Force
     Write-Host "[web] PowerShell HTTPD started on port $Port (PID $pid)"
 

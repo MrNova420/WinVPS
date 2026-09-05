@@ -36,16 +36,34 @@ $LogDir     = Join-Path $WinVPSDir 'logs'
 $BackupDir  = Join-Path $WinVPSDir 'backup'
 
 # --- Theme ---
-$Theme = @{
-    Primary   = "`e[38;5;75m"
-    Success   = "`e[38;5;114m"
-    Warning   = "`e[38;5;221m"
-    Error     = "`e[38;5;203m"
-    Info      = "`e[38;5;252m"
-    Dim       = "`e[38;5;243m"
-    Accent    = "`e[38;5;141m"
-    Reset     = "`e[0m"
-    Bold      = "`e[1m"
+# Detect VT100/ANSI support — fall back to plain text on legacy terminals
+$script:UseAnsi = $false
+try { $script:UseAnsi = [bool]$Host.UI.SupportsVirtualTerminal } catch {}
+# Ensure UTF-8 output for symbol/emoji support
+try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+
+$Theme = if ($script:UseAnsi) {
+    @{
+        Primary   = "`e[38;5;75m"
+        Success   = "`e[38;5;114m"
+        Warning   = "`e[38;5;221m"
+        Error     = "`e[38;5;203m"
+        Info      = "`e[38;5;252m"
+        Dim       = "`e[38;5;243m"
+        Accent    = "`e[38;5;141m"
+        Reset     = "`e[0m"
+        Bold      = "`e[1m"
+    }
+} else @{
+    Primary   = ''
+    Success   = ''
+    Warning   = ''
+    Error     = ''
+    Info      = ''
+    Dim       = ''
+    Accent    = ''
+    Reset     = ''
+    Bold      = ''
 }
 
 function Log($msg)  { Write-Host "$($Theme.Success)[-]$($Theme.Reset) $msg" }
@@ -118,7 +136,7 @@ function Show-Status {
     Load-Config
     Write-Host ''
     Write-Host "  $($Theme.Bold)WinVPS v$WinVPSVersion - System Status$($Theme.Reset)"
-    Write-Host "  $($Dim)------------------------------------------$($Theme.Reset)"
+    Write-Host "  $($Theme.Dim)------------------------------------------$($Theme.Reset)"
     Write-Host ''
 
     # System
@@ -211,7 +229,7 @@ function Invoke-Service {
                 # Interactive mode
                 Write-Host ''
                 Write-Host "  $($Theme.Primary)Add Service - Interactive$($Theme.Reset)"
-                Write-Host "  $($Dim)---------------------------$($Theme.Reset)"
+                Write-Host "  $($Theme.Dim)---------------------------$($Theme.Reset)"
                 Write-Host ''
                 $Name = Read-Host "  Service name"
                 if (-not $Name) { Err "Name required"; return }
@@ -285,7 +303,7 @@ function Show-Monitor {
     while ($true) {
         Clear-Host
         Write-Host "  $($Theme.Bold)WinVPS Monitor$($Theme.Reset) - $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
-        Write-Host "  $($Dim)------------------------------------------$($Theme.Reset)"
+        Write-Host "  $($Theme.Dim)------------------------------------------$($Theme.Reset)"
         Write-Host ''
         $cpu = Get-CimInstance Win32_Processor -ErrorAction SilentlyContinue
         if ($cpu) { Write-Host "  $($Theme.Primary)CPU:$($Theme.Reset)    $($cpu.LoadPercentage)%" }
@@ -394,7 +412,7 @@ function Show-Logs {
     } else {
         Write-Host ''
         Write-Host "  $($Theme.Primary)Available Logs$($Theme.Reset)"
-        Write-Host "  $($Dim)------------------------------------------$($Theme.Reset)"
+        Write-Host "  $($Theme.Dim)------------------------------------------$($Theme.Reset)"
         Get-ChildItem -Path $LogDir -Filter '*.log' -ErrorAction SilentlyContinue |
             ForEach-Object { Write-Host "  $($_.Name) $($Theme.Dim)($([math]::Round($_.Length/1KB))KB)$($Theme.Reset)" }
     }
@@ -473,7 +491,7 @@ function Invoke-TierCmd {
 function Show-Doctor {
     Write-Host ''
     Write-Host "  $($Theme.Bold)WinVPS Diagnostics$($Theme.Reset)"
-    Write-Host "  $($Dim)------------------------------------------$($Theme.Reset)"
+    Write-Host "  $($Theme.Dim)------------------------------------------$($Theme.Reset)"
     Write-Host ''
     $checks = 0; $passed = 0
     function Check($desc, $result) {
@@ -503,7 +521,7 @@ function Show-Doctor {
 function Show-Help {
     Write-Host ''
     Write-Host "  $($Theme.Bold)WinVPS v$WinVPSVersion - Windows VPS Management$($Theme.Reset)"
-    Write-Host "  $($Dim)------------------------------------------------------$($Theme.Reset)"
+    Write-Host "  $($Theme.Dim)------------------------------------------------------$($Theme.Reset)"
     Write-Host ''
     Write-Host "  $($Theme.Primary)CORE$($Theme.Reset)"
     Write-Host "    shell               Natural language shell (ask in plain English)"
