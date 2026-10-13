@@ -54,16 +54,21 @@ $Theme = if ($script:UseAnsi) {
         Reset     = "`e[0m"
         Bold      = "`e[1m"
     }
-} else @{
-    Primary   = ''
-    Success   = ''
-    Warning   = ''
-    Error     = ''
-    Info      = ''
-    Dim       = ''
-    Accent    = ''
-    Reset     = ''
-    Bold      = ''
+} else {
+    # Windows PowerShell 5.1 requires a statement block after 'else' and rejects
+    # a bare hashtable literal there ("Missing statement block after 'else'"),
+    # which made every winvps command fail at parse time.
+    @{
+        Primary   = ''
+        Success   = ''
+        Warning   = ''
+        Error     = ''
+        Info      = ''
+        Dim       = ''
+        Accent    = ''
+        Reset     = ''
+        Bold      = ''
+    }
 }
 
 function Log($msg)  { Write-Host "$($Theme.Success)[-]$($Theme.Reset) $msg" }
